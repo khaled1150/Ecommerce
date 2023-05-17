@@ -17,7 +17,7 @@ router.post("/", verifyTokenAndAdmin, async (req, res) => {
 });
 
 //UPDATE
-router.put("/:id", verifyToken, async (req, res) => {
+router.put("/:id", verifyTokenAndAdmin, async (req, res) => {
   try {
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
@@ -45,13 +45,13 @@ router.delete("/:id", verifyTokenAndAdmin, async (req, res) => {
 //GET PRODUCT
 router.get("/find/:id", async (req, res) => {
   try {
-    // const product = await Product.aggregate([
-    //   { $match: { _id: ObjectId(req.params.id) } },
-    //   { $unwind: "$reviews" },
-    //   { $sort: { "reviews.date": -1 } },
-    //   { $group: { _id: "$_id", reviews: { $push: "$reviews" } } },
-    // ]);
-    const product = await Product.findById(req.params.id);
+    const product = await Product.aggregate([
+      { $match: { _id: ObjectId(req.params.id) } },
+      { $unwind: "$reviews" },
+      { $sort: { "reviews.date": -1 } },
+      { $group: { _id: "$_id", reviews: { $push: "$reviews" } } },
+    ]);
+    //const product = await Product.findById(req.params.id);
     res.status(200).json(product);
   } catch (err) {
     res.status(500).json(err);
@@ -89,6 +89,7 @@ router.post("/:id/reviews", verifyToken, async (req, res) => {
   try {
     if (product.reviews.find((x) => x.username === req.body.username))
       return res.status(400).json("You already submitted a review");
+    console.log("3");
     product.reviews.push(req.body);
     product.rating =
       product.reviews.reduce((acc, item) => item.rating + acc, 0) /
